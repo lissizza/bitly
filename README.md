@@ -20,12 +20,12 @@ pip install -r requirements.txt
 Just start the python script with your link as argument:
 ```console
 $ python main.py http://dvmn.org
-<span style="color:green">This is your very short link: http://bit.ly/2Myn2fj</span>
+This is your very short link: http://bit.ly/2Myn2fj
 ```
 
 ```console
 $ python3.6 main.py http://bit.ly/2Myn2fj
-<span style="color:green">This link has been clicked 3 times.</span>
+This link has been clicked 3 times.
 ```
 
 ### Project Goals

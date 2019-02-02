@@ -1,6 +1,6 @@
 # Bitly url shorterer
 
-This small script can help you to make your long links short and pretty, and it can check the click statistics for your short links as well. This could be useful for SMM managers, for example.
+This small script can help you to make your long links short and pretty using [Bit.ly](http://bit.ly/) service, and it can check click statistics for your short links as well. This could be useful for SMM managers, for example.
 
 
 ### How to install

@@ -40,7 +40,7 @@ def get_click_count_response(
         f'{BITLY_BASE_API_URL}bitlinks/{bitlink}/clicks/summary'
     payload = {
         'unit': 'day',
-        'units': units
+        'units': units  # -1 by default, returns result for all time
     }
     response = requests.get(
         click_count_url,
@@ -73,39 +73,41 @@ def get_args():
     return args
 
 
+def handle_response(response, key=None):
+    try:
+        response.raise_for_status()
+        return str(response.json()[key])
+    except requests.exceptions.HTTPError as e: 
+        if e.response.status_code == 400:
+            return response.json()['description']
+        else:
+            return str(e)
+
+
 def main() -> None:
     load_dotenv()
     token = os.getenv('TOKEN')
     raw_link = get_args().url
 
     if not raw_link:
-        print('Your link is empty. Try again.')
+        error_print('Your link is empty. Try again.')
         exit()
 
-    protocol, link = raw_link.split('://') \
-        if 'http' in raw_link else ('http', raw_link)
+    try:
+        protocol, link = raw_link.split('://') \
+            if 'http' in raw_link else ('http', raw_link)
+    except ValueError:
+        error_print('Wrong url format. Try again.')
+        exit()
 
     if is_bitlink(link, token):
         response = get_click_count_response(link, token)
-        key = 'total_clicks'
-        message = 'This link has been clicked {} times.'
+        result = handle_response(response, 'total_clicks')
     else:
         response = get_shortener_response(f'{protocol}://{link}', token)
-        key = 'link'
-        message = 'This is your very short link: {}'
+        result = handle_response(response, 'link')
 
-    if response.ok:
-        success_print(message.format(response.json()[key]))
-        exit()
-    
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e: 
-        if e.response.status_code == 400:
-            message = response.json()['description']
-        else:
-            message = str(e)
-        error_print(message)
+    success_print(result) if response.ok else error_print(result)
 
 
 if __name__ == '__main__':

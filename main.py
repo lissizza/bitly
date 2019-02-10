@@ -5,11 +5,8 @@ from dotenv import load_dotenv
 
 from utils import error_print, success_print
 
-load_dotenv()
-
 
 BITLY_BASE_API_URL = 'https://api-ssl.bitly.com/v4/'
-TOKEN = os.getenv('TOKEN')
 
 
 def get_headers(token: str) -> dict:
@@ -18,7 +15,10 @@ def get_headers(token: str) -> dict:
     }
 
 
-def get_shortener_response(long_url: str, token=TOKEN) -> requests.Response:
+def get_shortener_response(
+    long_url: str,
+    token: str
+) -> requests.Response:
     shortener_url = f'{BITLY_BASE_API_URL}bitlinks'
     payload = {
         'long_url': long_url
@@ -31,11 +31,16 @@ def get_shortener_response(long_url: str, token=TOKEN) -> requests.Response:
     return response
 
 
-def get_click_count_response(bitlink: str, token=TOKEN) -> requests.Response:
-    click_count_url = f'{BITLY_BASE_API_URL}bitlinks/{bitlink}/clicks/summary'
+def get_click_count_response(
+    bitlink: str,
+    token: str,
+    units=-1
+) -> requests.Response:
+    click_count_url = \
+        f'{BITLY_BASE_API_URL}bitlinks/{bitlink}/clicks/summary'
     payload = {
         'unit': 'day',
-        'units': '' 
+        'units': units
     }
     response = requests.get(
         click_count_url,
@@ -45,7 +50,7 @@ def get_click_count_response(bitlink: str, token=TOKEN) -> requests.Response:
     return response
     
 
-def is_bitlink(link: str, token=TOKEN) -> bool:
+def is_bitlink(link: str, token: str) -> bool:
     check_bitlink_url = f'{BITLY_BASE_API_URL}bitlinks/{link}'
     response = requests.get(
         check_bitlink_url,
@@ -69,21 +74,23 @@ def get_args():
 
 
 def main() -> None:
+    load_dotenv()
+    token = os.getenv('TOKEN')
     raw_link = get_args().url
 
     if not raw_link:
         print('Your link is empty. Try again.')
         exit()
 
-    protocol, link = (raw_link.split('://')) \
+    protocol, link = raw_link.split('://') \
         if 'http' in raw_link else ('http', raw_link)
 
-    if is_bitlink(link):
-        response = get_click_count_response(link)
+    if is_bitlink(link, token):
+        response = get_click_count_response(link, token)
         key = 'total_clicks'
         message = 'This link has been clicked {} times.'
     else:
-        response = get_shortener_response(f'{protocol}://{link}')
+        response = get_shortener_response(f'{protocol}://{link}', token)
         key = 'link'
         message = 'This is your very short link: {}'
 
@@ -97,7 +104,7 @@ def main() -> None:
         if e.response.status_code == 400:
             message = response.json()['description']
         else:
-            message = e
+            message = str(e)
         error_print(message)
 
 

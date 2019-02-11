@@ -1,6 +1,10 @@
 import enum
 import sys
 
+
+FRAME_LENGTH = 79
+
+
 class Color(enum.Enum):
     RED = "\033[1;31m"  
     BLUE = "\033[1;34m"
@@ -11,11 +15,12 @@ class Color(enum.Enum):
     REVERSE = "\033[;7m"
 
 
-def pretty_print(message: str, color:str, *args, **kwargs) -> None:
+def pretty_print(message:str, color:str, *args, **kwargs) -> None:
     sys.stdout.write(color)
-    print('-'*len(message))
+    frame_line = '-' * FRAME_LENGTH
+    print(frame_line)
     print(message)
-    print('-'*len(message))
+    print(frame_line)
     sys.stdout.write(Color.RESET.value)
 
 

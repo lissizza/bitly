@@ -15,10 +15,7 @@ def get_headers(token: str) -> dict:
     }
 
 
-def get_shortener_response(
-    long_url: str,
-    token: str
-) -> requests.Response:
+def get_bitlink(long_url: str, token: str) -> str:
     shortener_url = f'{BITLY_BASE_API_URL}bitlinks'
     payload = {
         'long_url': long_url
@@ -28,14 +25,11 @@ def get_shortener_response(
         headers=get_headers(token),
         json=payload
     )
-    return response
+    response.raise_for_status()
+    return str(response.json()['link'])
 
 
-def get_click_count_response(
-    bitlink: str,
-    token: str,
-    units=-1
-) -> requests.Response:
+def get_click_count(bitlink: str, token: str, units=-1) -> str:
     click_count_url = \
         f'{BITLY_BASE_API_URL}bitlinks/{bitlink}/clicks/summary'
     payload = {
@@ -47,7 +41,8 @@ def get_click_count_response(
         headers=get_headers(token),
         params=payload
     )
-    return response
+    response.raise_for_status()
+    return str(response.json()['total_clicks'])
     
 
 def is_bitlink(link: str, token: str) -> bool:
@@ -73,17 +68,6 @@ def get_args():
     return args
 
 
-def handle_response(response, key=None):
-    try:
-        response.raise_for_status()
-        return str(response.json()[key])
-    except requests.exceptions.HTTPError as e: 
-        if e.response.status_code == 400:
-            return response.json()['description']
-        else:
-            return str(e)
-
-
 def main() -> None:
     load_dotenv()
     token = os.getenv('TOKEN')
@@ -100,14 +84,20 @@ def main() -> None:
         error_print('Wrong url format. Try again.')
         exit()
 
-    if is_bitlink(link, token):
-        response = get_click_count_response(link, token)
-        result = handle_response(response, 'total_clicks')
-    else:
-        response = get_shortener_response(f'{protocol}://{link}', token)
-        result = handle_response(response, 'link')
-
-    success_print(result) if response.ok else error_print(result)
+    try:
+        if is_bitlink(link, token):
+            success_print('This link has been clicked {} times.'.format(
+                get_click_count(link, token)
+            ))
+        else:
+            success_print('This is your very short link: {}'.format(
+                get_bitlink(f'{protocol}://{link}', token)
+            ))
+    except requests.exceptions.HTTPError as e: 
+        if e.response.status_code == 400:
+            error_print(e.response.json()['description'])
+        else:
+            error_print(str(e))
 
 
 if __name__ == '__main__':
